@@ -17,7 +17,8 @@ import { ArrowLeft, Mail, Phone, Calendar, Trash2, Edit, Plus } from 'lucide-rea
 import { Project } from '@/types/project';
 import { listProjects } from '@/data/projects';
 import { Site, SiteInput } from '@/schemas/site';
-import { listSites, createSite, updateSite, deleteSite, archiveSite, unarchiveSite, ArchiveOptions, TakeoverMode } from '@/data/sites';
+import { listSites, createSite, updateSite, deleteSite, archiveSite, ArchiveOptions } from '@/data/sites';
+import { unarchiveSiteSafe, TakeoverMode } from '@/data/sites-unarchive';
 import { SiteList } from '@/components/sites/SiteList';
 import { SiteModal } from '@/components/sites/SiteModal';
 import { ArchiveSiteModal } from '@/components/sites/ArchiveSiteModal';
@@ -45,6 +46,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ client
     const [siteToAction, setSiteToAction] = useState<Site | null>(null); // merged state for archive/unarchive
     const [isUnarchiveModalOpen, setIsUnarchiveModalOpen] = useState(false);
     const [conflictingSiteId, setConflictingSiteId] = useState<string | undefined>(undefined);
+    const [conflictingClientName, setConflictingClientName] = useState<string | undefined>(undefined);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { dialogState, confirm, closeDialog } = useDialog();
@@ -159,18 +161,20 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ client
             try {
                 setIsSubmitting(true);
                 // Try to unarchive directly
-                await unarchiveSite(site.id);
-                toast.success("Site unarchived successfully");
-                await fetchSites();
+                const result = await unarchiveSiteSafe(site.id);
+
+                if (result.success) {
+                    toast.success("Site unarchived successfully");
+                    await fetchSites();
+                } else if (result.conflict) {
+                    setSiteToAction(site);
+                    setConflictingSiteId(result.conflict.siteId);
+                    setConflictingClientName(result.conflict.clientName);
+                    setIsUnarchiveModalOpen(true);
+                }
             } catch (error: any) {
                 console.error("Unarchive error:", error);
-                if (error.code === 'DOMAIN_CONFLICT') {
-                    setSiteToAction(site);
-                    setConflictingSiteId(error.conflictingSiteId);
-                    setIsUnarchiveModalOpen(true);
-                } else {
-                    toast.error(`Failed to unarchive: ${error.message}`);
-                }
+                toast.error(`Failed to unarchive: ${error.message}`);
             } finally {
                 setIsSubmitting(false);
             }
@@ -216,12 +220,18 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ client
         if (!siteToAction) return;
         setIsSubmitting(true);
         try {
-            await unarchiveSite(siteToAction.id, { takeoverMode: mode });
-            toast.success("Site restored with domain takeover");
-            await fetchSites();
-            setIsUnarchiveModalOpen(false);
-            setSiteToAction(null);
-            setConflictingSiteId(undefined);
+            const result = await unarchiveSiteSafe(siteToAction.id, { takeoverMode: mode });
+            if (result.success) {
+                toast.success("Site restored with domain takeover");
+                await fetchSites();
+                setIsUnarchiveModalOpen(false);
+                setSiteToAction(null);
+                setConflictingSiteId(undefined);
+                setConflictingClientName(undefined);
+            } else {
+                // Should not happen if takeoverMode is set, unless another error occurred
+                toast.error("Failed to restore site: Unknown error");
+            }
         } catch (error: any) {
             console.error("Failed to unarchive with takeover", error);
             toast.error(`Failed to restore site: ${error.message}`);
@@ -254,6 +264,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ client
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
+                    {/* HMR Force Refresh */}
                     <Button variant="ghost" size="sm" onClick={() => router.push('/admin/clients')}>
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
@@ -423,10 +434,16 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ client
 
             <UnarchiveSiteModal
                 isOpen={isUnarchiveModalOpen}
-                onClose={() => setIsUnarchiveModalOpen(false)}
+                onClose={() => {
+                    setIsUnarchiveModalOpen(false);
+                    setSiteToAction(null);
+                    setConflictingSiteId(undefined);
+                    setConflictingClientName(undefined);
+                }}
                 onConfirm={handleConfirmUnarchive}
                 site={siteToAction}
                 conflictingSiteId={conflictingSiteId}
+                conflictingClientName={conflictingClientName}
                 isLoading={isSubmitting}
             />
 

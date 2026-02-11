@@ -242,6 +242,13 @@ export async function updateSite(id: string, data: Partial<SiteInput>): Promise<
                 updatedAt: serverTimestamp()
             };
 
+            // Remove undefined fields
+            Object.keys(updatePayload).forEach(key => {
+                if (updatePayload[key] === undefined) {
+                    delete updatePayload[key];
+                }
+            });
+
             // Ensure domain is updated if provided
             if (data.domain !== undefined) {
                 updatePayload.domain = normalizeDomain(data.domain) || '';
@@ -380,9 +387,17 @@ export async function archiveSite(siteId: string, options: ArchiveOptions): Prom
 
 export type TakeoverMode = 'pause' | 'archive';
 
-export async function unarchiveSite(siteId: string, options?: { takeoverMode?: TakeoverMode }): Promise<void> {
+export interface UnarchiveResult {
+    success: boolean;
+    conflict?: {
+        siteId: string;
+        ownerLabel: string;
+    }
+}
+
+export async function unarchiveSiteSafe(siteId: string, options?: { takeoverMode?: TakeoverMode }): Promise<UnarchiveResult> {
     try {
-        await runTransaction(db, async (transaction) => {
+        return await runTransaction(db, async (transaction) => {
             const siteRef = doc(db, COLLECTION_NAME, siteId);
             const siteSnap = await transaction.get(siteRef);
 
@@ -399,7 +414,7 @@ export async function unarchiveSite(siteId: string, options?: { takeoverMode?: T
                     status: 'draft',
                     updatedAt: serverTimestamp()
                 });
-                return;
+                return { success: true };
             }
 
             // Check claim
@@ -417,10 +432,14 @@ export async function unarchiveSite(siteId: string, options?: { takeoverMode?: T
                         if (ownerData.status !== 'archived') {
                             // CONFLICT DETECTED
                             if (!options?.takeoverMode) {
-                                const error = new Error(`Domain "${effectiveDomain}" is claimed by site: ${ownerData.label || 'Unknown'}`);
-                                (error as any).code = 'DOMAIN_CONFLICT';
-                                (error as any).conflictingSiteId = claimData.siteId;
-                                throw error;
+                                // Return conflict info instead of throwing
+                                return {
+                                    success: false,
+                                    conflict: {
+                                        siteId: claimData.siteId,
+                                        ownerLabel: ownerData.label || 'Unknown'
+                                    }
+                                };
                             }
 
                             // HANDLE TAKEOVER
@@ -471,6 +490,8 @@ export async function unarchiveSite(siteId: string, options?: { takeoverMode?: T
                 clientId: siteData.clientId,
                 updatedAt: serverTimestamp()
             });
+
+            return { success: true };
         });
     } catch (error) {
         console.error("Error unarchiving site:", error);
