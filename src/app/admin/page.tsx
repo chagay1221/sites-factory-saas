@@ -5,7 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { LogOut, Activity, Users, FileText, Timer } from 'lucide-react';
-import { projectService } from '@/services/projectService';
+import { getDashboardStats } from '@/data/projects';
+import { getOpenLeadsCount } from '@/data/leads';
+import { scanAndFixClientNumbers } from '@/data/clients';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/ui/Toast';
 
 export default function DashboardPage() {
     const { user, logout } = useAuth();
@@ -13,9 +17,12 @@ export default function DashboardPage() {
         building: 0,
         deploy: 0,
         fixes: 0,
-        avgActiveDays: 0
+        avgActiveDays: 0,
+        openLeads: 0
     });
     const [loading, setLoading] = useState(true);
+    const [isFixing, setIsFixing] = useState(false);
+    const toast = useToast();
 
     const handleLogout = async () => {
         await logout();
@@ -24,8 +31,11 @@ export default function DashboardPage() {
     useEffect(() => {
         const loadStats = async () => {
             try {
-                const data = await projectService.getDashboardStats();
-                setStats(data);
+                const [projectStats, leadsCount] = await Promise.all([
+                    getDashboardStats(),
+                    getOpenLeadsCount()
+                ]);
+                setStats({ ...projectStats, openLeads: leadsCount });
             } catch (error) {
                 console.error("Failed to load dashboard stats", error);
             } finally {
@@ -35,11 +45,24 @@ export default function DashboardPage() {
         loadStats();
     }, []);
 
+    const handleFixClientNumbers = async () => {
+        setIsFixing(true);
+        try {
+            const result = await scanAndFixClientNumbers();
+            toast.success(`Scanned ${result.scanned} clients. Fixed ${result.fixed} missing IDs.`);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to fix client numbers.");
+        } finally {
+            setIsFixing(false);
+        }
+    };
+
     const statCards = [
+        { label: 'Open Leads', value: stats.openLeads, icon: Users, description: 'New & In Progress' },
         { label: 'Building Phase', value: stats.building, icon: Activity, description: 'Projects in development' },
         { label: 'Ready to Deploy', value: stats.deploy, icon: Timer, description: 'Awating launch' },
         { label: 'In Fixes', value: stats.fixes, icon: FileText, description: 'Post-launch adjustments' },
-        { label: 'Avg Project Age', value: `${stats.avgActiveDays}d`, icon: Users, description: 'For active projects' },
     ];
 
     return (
@@ -80,6 +103,19 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
                 <p className="mt-1">Activity feed coming soon.</p>
             </Card>
+
+            <div className="flex justify-end">
+                <Button
+                    variant="outline"
+                    onClick={handleFixClientNumbers}
+                    isLoading={isFixing}
+                    className="text-xs text-gray-500"
+                >
+                    Run Migration: Fix Missing Client IDs
+                </Button>
+            </div>
+
+            <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
         </div>
     );
 }

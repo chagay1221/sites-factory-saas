@@ -1,28 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-
-
-import { ClientInput, ClientSchema } from '@/types/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { z } from 'zod';
+import { LeadInput } from '@/types/lead';
 
-interface ClientFormProps {
-    initialData?: Partial<ClientInput>;
-    onSubmit: (data: ClientInput) => Promise<void>;
+interface LeadFormProps {
+    initialData?: Partial<LeadInput>;
+    onSubmit: (data: LeadInput) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
     submitLabel?: string;
 }
 
-export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitLabel }: ClientFormProps) => {
-    const [formData, setFormData] = useState<Partial<ClientInput>>({
+export const LeadForm = ({ initialData, onSubmit, onCancel, isLoading, submitLabel }: LeadFormProps) => {
+    const [formData, setFormData] = useState<Partial<LeadInput>>({
         fullName: initialData?.fullName || '',
         email: initialData?.email || '',
         phone: initialData?.phone || '',
-        status: initialData?.status || 'lead',
-        pipelineStage: initialData?.pipelineStage || 'New Lead',
+        source: initialData?.source || 'manual',
+        status: initialData?.status || 'new',
         notes: initialData?.notes || '',
     });
 
@@ -31,7 +28,7 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear error when user types
+        // Simple validation clear
         if (errors[name]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
@@ -44,24 +41,13 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate with Zod
-        try {
-            const validatedData = ClientSchema.omit({
-                id: true, createdAt: true, updatedAt: true, emailLower: true, phoneNormalized: true
-            }).parse(formData);
-
-            await onSubmit(validatedData);
-        } catch (err) {
-            if (err instanceof z.ZodError) {
-                const newErrors: Record<string, string> = {};
-                err.errors.forEach(error => {
-                    if (error.path[0]) {
-                        newErrors[error.path[0] as string] = error.message;
-                    }
-                });
-                setErrors(newErrors);
-            }
+        // Manual validation for MVP
+        if (!formData.fullName?.trim()) {
+            setErrors({ fullName: "Full Name is required" });
+            return;
         }
+
+        await onSubmit(formData as LeadInput);
     };
 
     return (
@@ -73,7 +59,7 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
                     value={formData.fullName}
                     onChange={handleChange}
                     error={errors.fullName}
-                    placeholder="e.g. Acme Corp"
+                    placeholder="e.g. John Doe"
                 />
             </div>
 
@@ -85,8 +71,7 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        error={errors.email}
-                        placeholder="contact@acme.com"
+                        placeholder="john@example.com"
                     />
                 </div>
                 <div>
@@ -95,7 +80,6 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        error={errors.phone}
                         placeholder="+1 (555) 000-0000"
                     />
                 </div>
@@ -110,18 +94,20 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
                         onChange={handleChange}
                         className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
                     >
-                        <option value="lead">Lead</option>
-                        <option value="active">Active</option>
-                        <option value="paused">Paused</option>
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="converted">Converted</option>
+                        <option value="archived">Archived</option>
                     </select>
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700">Pipeline Stage</label>
+                    <label className="text-sm font-medium text-gray-700">Source</label>
                     <Input
-                        name="pipelineStage"
-                        value={formData.pipelineStage}
+                        name="source"
+                        value={formData.source}
                         onChange={handleChange}
-                        error={errors.pipelineStage}
+                        placeholder="e.g. Website, Manual"
                     />
                 </div>
             </div>
@@ -133,7 +119,7 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
                     value={formData.notes}
                     onChange={handleChange}
                     className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                    placeholder="Internal notes..."
+                    placeholder="Lead notes..."
                 />
             </div>
 
@@ -142,7 +128,7 @@ export const ClientForm = ({ initialData, onSubmit, onCancel, isLoading, submitL
                     Cancel
                 </Button>
                 <Button type="submit" isLoading={isLoading}>
-                    {submitLabel || (initialData ? 'Update Client' : 'Create Client')}
+                    {submitLabel || (initialData?.fullName ? 'Update Lead' : 'Create Lead')}
                 </Button>
             </div>
         </form>

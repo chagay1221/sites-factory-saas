@@ -4,7 +4,7 @@ import React from 'react';
 import { Client } from '@/types/client';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Edit, Trash2, Phone, Mail } from 'lucide-react';
+import { Edit, Trash2, Phone, Mail, FileText, Briefcase } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface ClientListProps {
@@ -22,7 +22,7 @@ export const ClientList = ({ clients, onEdit, onDelete, onRestore, isTrash = fal
         return (
             <Card className="flex min-h-[200px] flex-col items-center justify-center border-dashed p-8 text-center bg-gray-50/50">
                 <p className="text-sm text-gray-500">
-                    {isTrash ? "Trash is empty." : "No clients found. Add a new client to get started."}
+                    {isTrash ? "Trash is empty." : "No items found."}
                 </p>
             </Card>
         );
@@ -30,19 +30,26 @@ export const ClientList = ({ clients, onEdit, onDelete, onRestore, isTrash = fal
 
     return (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {clients.map((client) => (
-                <Card key={client.id} className="flex flex-col justify-between p-5 hover:shadow-md transition-shadow">
+            {clients.map((client, index) => (
+                <Card
+                    key={client.id}
+                    className="flex flex-col justify-between p-5 hover:shadow-md transition-shadow animate-slide-in opacity-0"
+                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
+                >
                     <div>
                         <div className="flex items-start justify-between">
                             <div>
                                 <h3 className="font-semibold text-gray-900 line-clamp-1">{client.fullName}</h3>
+                                {client.clientNumber && (
+                                    <p className="text-xs font-medium text-indigo-600">ID: {client.clientNumber}</p>
+                                )}
                                 <p className="text-xs text-gray-500 mt-1">{client.pipelineStage}</p>
                             </div>
                             <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${client.status === 'active' ? 'bg-green-50 text-green-700 ring-green-600/20' :
                                 client.status === 'paused' ? 'bg-yellow-50 text-yellow-800 ring-yellow-600/20' :
                                     'bg-blue-50 text-blue-700 ring-blue-600/20'
                                 }`}>
-                                {client.status}
+                                {client.status === 'lead' ? 'Lead' : client.status}
                             </span>
                         </div>
 
@@ -81,12 +88,25 @@ export const ClientList = ({ clients, onEdit, onDelete, onRestore, isTrash = fal
                     <div className="mt-5 flex items-center justify-end gap-2 border-t pt-4">
                         {!isTrash && (
                             <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
-                                className="text-gray-500 hover:text-black h-8 px-2"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-black hover:border-gray-300"
                                 onClick={() => router.push(`/admin/clients/${client.id}`)}
+                                title="View Details"
                             >
-                                Details
+                                <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+
+                        {!isTrash && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200"
+                                onClick={() => router.push(`/admin/projects?clientId=${client.id}`)}
+                                title="Open New Project"
+                            >
+                                <Briefcase className="h-3.5 w-3.5" />
                             </Button>
                         )}
 

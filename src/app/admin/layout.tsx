@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const ADMIN_UID = "5LKD1gmaNmZVgKOZPd5bpl5umMT2";
 
     useEffect(() => {
         if (!loading && !user) {
@@ -26,6 +27,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (!user) {
         return null; // Will redirect
+    }
+
+    // Admin Gate
+    if (user.uid !== ADMIN_UID) {
+        return (
+            <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-gray-50">
+                <div className="max-w-md text-center">
+                    <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+                    <p className="mt-2 text-gray-600">You do not have permission to view this area.</p>
+                    <p className="text-xs text-gray-400 mt-4">UID: {user.uid}</p>
+                </div>
+            </div>
+        );
     }
 
     return (

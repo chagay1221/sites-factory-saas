@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
 import { useRouter } from 'next/navigation';
-import { Spinner } from '@/components/ui/Spinner';
+// Removed unused Spinner
 
 interface AuthContextType {
     user: User | null;
@@ -53,9 +53,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         if (!auth) {
-            setLoading(false);
+            setTimeout(() => setLoading(false), 0);
             return;
         }
+
 
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user);

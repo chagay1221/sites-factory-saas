@@ -1,0 +1,57 @@
+
+> sites-factory-saas@0.1.0 lint
+> eslint --no-color
+
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\clients\[clientId]\page.tsx
+  32:26  warning  'alert' is assigned a value but never used                                                                                            @typescript-eslint/no-unused-vars
+  52:8   warning  React Hook useEffect has missing dependencies: 'fetchClient' and 'fetchProjects'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  57:50  error    Unexpected any. Specify a different type                                                                                              @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\clients\leads\[id]\page.tsx
+   40:26  warning  'alert' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+   40:33  warning  'confirm' is assigned a value but never used                                                              @typescript-eslint/no-unused-vars
+   61:8   warning  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   67:42  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+   73:25  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  114:19  warning  'result' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+  123:25  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\clients\page.tsx
+   96:8   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  103:40  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  106:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  119:45  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  127:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  168:43  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  177:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  203:18  warning  'e' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  297:74  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  307:74  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\projects\[id]\page.tsx
+  25:26  warning  'alert' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  46:52  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\projects\page.tsx
+  137:12  warning  'activeId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  191:92  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  194:66  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\context\AuthContext.tsx
+  7:10  warning  'Spinner' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\data\clients.ts
+  196:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\data\leads.ts
+   88:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  173:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\data\projects.ts
+  130:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 32 problems (21 errors, 11 warnings)
+

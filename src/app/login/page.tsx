@@ -15,7 +15,7 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { user, mockLogin } = useAuth();
+    const { } = useAuth();
     // ...
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,11 +25,12 @@ export default function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth!, email, password);
             router.push('/admin');
-        } catch (err: any) {
-            console.error("Login Error:", err);
-            console.error("Error Code:", err.code);
-            console.error("Error Message:", err.message);
-            setError(`Failed to log in: ${err.message}`);
+        } catch (err: unknown) {
+            const error = err as { code?: string; message?: string };
+            console.error("Login Error:", error);
+            console.error("Error Code:", error?.code);
+            console.error("Error Message:", error?.message);
+            setError(`Failed to log in: ${error?.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }

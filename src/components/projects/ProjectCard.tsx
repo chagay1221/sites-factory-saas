@@ -14,7 +14,6 @@ interface ProjectCardProps {
 }
 
 const STAGE_LABELS: Record<string, string> = {
-    lead: 'Lead',
     closed: 'Closed',
     waiting_materials: 'Waiting Materials',
     building: 'Building',
@@ -44,25 +43,49 @@ export const ProjectCard = ({ project, onStageChange, onDelete }: ProjectCardPro
         touchAction: 'none', // Prevent scrolling while dragging on touch devices
     };
 
+    const [mounted, setMounted] = React.useState(false);
+    const [, setTick] = React.useState(0); // Force re-render
+
     React.useEffect(() => {
+        setMounted(true);
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsMenuOpen(false);
             }
         };
+
+        // Update time every minute
+        const timer = setInterval(() => {
+            setTick(t => t + 1);
+        }, 60000);
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            clearInterval(timer);
+        };
     }, []);
 
-    // Calculate Age
-    const getAge = () => {
-        const start = project.startedAt?.toDate?.() || project.createdAt?.toDate?.() || new Date();
+    // Calculate Waiting Time (Time since last update)
+    const getWaitingTime = () => {
+        if (!mounted) return '...'; // Avoid hydration mismatch
+        const lastUpdate = project.updatedAt?.toDate?.() || project.createdAt?.toDate?.() || new Date();
         const now = new Date();
-        const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        return diff;
+        const diffMs = now.getTime() - lastUpdate.getTime();
+
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (days === 0 && hours === 0) {
+            if (minutes === 0) return 'Just now';
+            return `${minutes}m`;
+        }
+        if (days === 0) return `${hours}h ${minutes}m`;
+        return `${days}d ${hours}h`;
     };
 
-    const age = getAge();
+    const waitingTime = getWaitingTime();
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -133,9 +156,13 @@ export const ProjectCard = ({ project, onStageChange, onDelete }: ProjectCardPro
             </p>
 
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                <div className="flex items-center text-xs text-gray-400" title="Days active">
+                <div className="flex items-center text-xs text-gray-500 font-medium" title={project.pipelineStage === 'retainer' ? "Date entered retainer" : "Time since last update"}>
                     <Clock className="h-3 w-3 mr-1" />
-                    {age}d
+                    {project.pipelineStage === 'retainer' ? (
+                        <span>Retainer ({mounted && project.updatedAt?.toDate?.() ? project.updatedAt.toDate().toLocaleDateString() : '...'})</span>
+                    ) : (
+                        <span>Waiting: {waitingTime}</span>
+                    )}
                 </div>
 
                 {/* Simple Stage Dropdown */}

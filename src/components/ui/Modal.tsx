@@ -40,7 +40,7 @@ export const Modal = ({ isOpen, onClose, title, children, className }: ModalProp
             <div
                 ref={modalRef}
                 className={cn(
-                    'relative w-full max-w-lg rounded-lg bg-white shadow-lg animate-in fade-in zoom-in-95 duration-200',
+                    'relative w-full max-w-lg rounded-lg bg-white shadow-lg animate-in fade-in zoom-in-95 slide-in-from-bottom-5 duration-300',
                     className
                 )}
             >

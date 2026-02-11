@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-
 export const ClientSchema = z.object({
     id: z.string(),
     clientNumber: z.number().optional(), // Human-readable sequential ID (e.g., 1523)

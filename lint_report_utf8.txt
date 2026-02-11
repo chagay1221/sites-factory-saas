@@ -1,0 +1,101 @@
+﻿
+> sites-factory-saas@0.1.0 lint
+> eslint
+
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\clients\[clientId]\page.tsx
+  32:26  warning  'alert' is assigned a value but never used                                                                                            @typescript-eslint/no-unused-vars
+  52:8   warning  React Hook useEffect has missing dependencies: 'fetchClient' and 'fetchProjects'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  54:45  error    Unexpected any. Specify a different type                                                                                              @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\clients\leads\[id]\page.tsx
+   29:66  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+   30:26  warning  'alert' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+   30:33  warning  'confirm' is assigned a value but never used                                                              @typescript-eslint/no-unused-vars
+   51:8   warning  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   53:43  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+   63:25  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  104:19  warning  'result' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+  113:25  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\clients\page.tsx
+    7:32  warning  'Users' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   96:8   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  100:45  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  106:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  119:45  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  127:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  168:43  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  177:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  203:18  warning  'e' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  297:74  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  307:74  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\projects\[id]\page.tsx
+  25:26  warning  'alert' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  43:39  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\admin\projects\page.tsx
+  137:12  warning  'activeId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  176:46  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  191:92  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  194:66  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\app\login\page.tsx
+  18:13  warning  'user' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  18:19  warning  'mockLogin' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  28:23  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\components\clients\ClientForm.tsx
+  4:10  warning  'useForm' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\components\projects\ProjectForm.tsx
+   9:10  warning  'Spinner' is defined but never used         @typescript-eslint/no-unused-vars
+  27:60  warning  'reset' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\components\ui\Card.tsx
+  4:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\components\ui\Toast.tsx
+  25:25  warning  'id' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\context\AuthContext.tsx
+   7:10  warning  'Spinner' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  56:13  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\context\AuthContext.tsx:56:13
+  54 |     useEffect(() => {
+  55 |         if (!auth) {
+> 56 |             setLoading(false);
+     |             ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  57 |             return;
+  58 |         }
+  59 |  react-hooks/set-state-in-effect
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\data\clients.ts
+   21:31  warning  'ClientSchema' is defined but never used  @typescript-eslint/no-unused-vars
+  179:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  196:24  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\data\leads.ts
+   20:10  warning  'Lead' is defined but never used          @typescript-eslint/no-unused-vars
+   20:16  warning  'LeadInput' is defined but never used     @typescript-eslint/no-unused-vars
+   27:81  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:40  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:24  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  173:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hagai\OneDrive - Ariel University\Desktop\saas\sites-factory-saas\src\data\projects.ts
+  130:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 51 problems (30 errors, 21 warnings)
+

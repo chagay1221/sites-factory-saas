@@ -2,10 +2,14 @@
 
 import React, { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { projectService } from '@/services/projectService';
-import { Project } from '@/types/project';
+import { getProject, updateProject, deleteProject } from '@/data/projects';
+import { Project, ProjectInput } from '@/types/project';
 import { ProjectForm } from '@/components/projects/ProjectForm';
 import { Spinner } from '@/components/ui/Spinner';
+import { useDialog } from '@/hooks/useDialog';
+import { Dialog } from '@/components/ui/Dialog';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -18,13 +22,14 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const { dialogState, confirm, closeDialog } = useDialog();
+    const toast = useToast();
     const router = useRouter();
 
     useEffect(() => {
         const load = async () => {
-            const data = await projectService.getProject(projectId);
+            const data = await getProject(projectId);
             if (!data) {
-                // Handle 404
                 router.push('/admin/projects');
                 return;
             }
@@ -34,28 +39,29 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         load();
     }, [projectId, router]);
 
-    const handleUpdate = async (data: any) => {
+    const handleUpdate = async (data: unknown) => {
         setIsSaving(true);
         try {
-            await projectService.updateProject(projectId, data);
+            await updateProject(projectId, data as Partial<ProjectInput>);
+            toast.success("Project updated successfully!");
             router.push('/admin/projects'); // Go back to board after save
         } catch (error) {
             console.error("Failed to update project", error);
-            alert("Failed to update project");
+            toast.error("Failed to update project");
             setIsSaving(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this project? This cannot be undone.")) return;
-
-        try {
-            await projectService.deleteProject(projectId);
-            router.push('/admin/projects');
-        } catch (error) {
-            console.error("Failed to delete project", error);
-            alert("Failed to delete project");
-        }
+        confirm("Are you sure you want to delete this project? This cannot be undone.", async () => {
+            try {
+                await deleteProject(projectId);
+                router.push('/admin/projects');
+            } catch (error) {
+                console.error("Failed to delete project", error);
+                toast.error("Failed to delete project");
+            }
+        });
     };
 
     if (loading) {
@@ -100,6 +106,19 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 <div>Created: {project.createdAt?.toDate?.()?.toLocaleString() || 'N/A'}</div>
                 <div>Last Updated: {project.updatedAt?.toDate?.()?.toLocaleString() || 'N/A'}</div>
             </div>
+
+            {/* Global Dialog */}
+            <Dialog
+                isOpen={dialogState.isOpen}
+                onClose={closeDialog}
+                onConfirm={dialogState.onConfirm}
+                type={dialogState.type}
+                title={dialogState.title}
+                message={dialogState.message}
+            />
+
+            {/* Toast Notifications */}
+            <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
         </div>
     );
 }

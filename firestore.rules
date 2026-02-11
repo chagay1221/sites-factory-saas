@@ -1,8 +1,8 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Basic rule: Allow read/write only if user is authenticated
+    // Exact Admin UID for now.
+    // In future, this will be replaced by "deny all" after moving to Admin SDK.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
