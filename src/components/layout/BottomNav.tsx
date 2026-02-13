@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FolderKanban, Factory } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, Factory, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
     { label: 'Clients', href: '/admin/clients', icon: Users },
     { label: 'Projects', href: '/admin/projects', icon: FolderKanban },
     { label: 'Factory', href: '/admin/factory', icon: Factory },
+    { label: 'Billing', href: '/admin/billing', icon: CreditCard },
 ];
 
 export const BottomNav = () => {

@@ -113,7 +113,19 @@ export async function createSite(data: SiteInput): Promise<string> {
                 if (holderSnap.exists()) {
                     const holderData = holderSnap.data();
                     if (holderData.status !== 'archived') {
-                        throw new Error(`Domain "${effectiveDomain}" is already used by another active site.`);
+                        // Fetch client name for better error message
+                        let clientName = "Unknown Client";
+                        try {
+                            const clientRef = doc(db, 'clients', holderData.clientId);
+                            const clientSnap = await transaction.get(clientRef);
+                            if (clientSnap.exists()) {
+                                clientName = clientSnap.data().fullName || "Unknown Client";
+                            }
+                        } catch (e) {
+                            console.warn("Failed to fetch conflicting client details", e);
+                        }
+
+                        throw new Error(`Domain "${effectiveDomain}" is already used by ${clientName}${holderData.label ? ` ("${holderData.label}")` : ''}.`);
                     }
                 }
                 // If holder is archived or doesn't exist (stale claim), we can overwrite
@@ -222,7 +234,19 @@ export async function updateSite(id: string, data: Partial<SiteInput>): Promise<
                         if (ownerSnap && ownerSnap.exists()) {
                             const ownerData = ownerSnap.data() as Site;
                             if (ownerData.status !== 'archived') {
-                                throw new Error(`Domain "${nextEffectiveDomain}" is already used by another active site.`);
+                                // Fetch client name for better error message
+                                let clientName = "Unknown Client";
+                                try {
+                                    const clientRef = doc(db, 'clients', ownerData.clientId);
+                                    const clientSnap = await transaction.get(clientRef);
+                                    if (clientSnap.exists()) {
+                                        clientName = clientSnap.data().fullName || "Unknown Client";
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to fetch conflicting client details", e);
+                                }
+
+                                throw new Error(`Domain "${nextEffectiveDomain}" is already used by ${clientName}${ownerData.label ? ` ("${ownerData.label}")` : ''}.`);
                             }
                         }
                     }
@@ -355,7 +379,20 @@ export async function archiveSite(siteId: string, options: ArchiveOptions): Prom
                                 const ownerRef = doc(db, COLLECTION_NAME, claimer.siteId);
                                 const ownerSnap = await transaction.get(ownerRef);
                                 if (ownerSnap.exists() && ownerSnap.data().status !== 'archived') {
-                                    throw new Error(`Domain "${newDomain}" is used by another site.`);
+                                    const ownerData = ownerSnap.data() as Site;
+                                    // Fetch client name for better error message
+                                    let clientName = "Unknown Client";
+                                    try {
+                                        const clientRef = doc(db, 'clients', ownerData.clientId);
+                                        const clientSnap = await transaction.get(clientRef);
+                                        if (clientSnap.exists()) {
+                                            clientName = clientSnap.data().fullName || "Unknown Client";
+                                        }
+                                    } catch (e) {
+                                        console.warn("Failed to fetch conflicting client details", e);
+                                    }
+
+                                    throw new Error(`Domain "${newDomain}" is used by ${clientName}${ownerData.label ? ` ("${ownerData.label}")` : ''}.`);
                                 }
                             }
                         }
@@ -392,6 +429,7 @@ export interface UnarchiveResult {
     conflict?: {
         siteId: string;
         ownerLabel: string;
+        clientName?: string;
     }
 }
 
@@ -430,6 +468,18 @@ export async function unarchiveSiteSafe(siteId: string, options?: { takeoverMode
                     if (ownerSnap.exists()) {
                         const ownerData = ownerSnap.data() as Site;
                         if (ownerData.status !== 'archived') {
+                            // Fetch client name
+                            let clientName = "Unknown Client";
+                            try {
+                                const clientRef = doc(db, 'clients', ownerData.clientId);
+                                const clientSnap = await transaction.get(clientRef);
+                                if (clientSnap.exists()) {
+                                    clientName = clientSnap.data().fullName || "Unknown Client";
+                                }
+                            } catch (e) {
+                                console.warn("Failed to fetch conflicting client details", e);
+                            }
+
                             // CONFLICT DETECTED
                             if (!options?.takeoverMode) {
                                 // Return conflict info instead of throwing
@@ -437,7 +487,8 @@ export async function unarchiveSiteSafe(siteId: string, options?: { takeoverMode
                                     success: false,
                                     conflict: {
                                         siteId: claimData.siteId,
-                                        ownerLabel: ownerData.label || 'Unknown'
+                                        ownerLabel: ownerData.label || 'Unknown',
+                                        clientName: clientName
                                     }
                                 };
                             }
@@ -478,6 +529,63 @@ export async function unarchiveSiteSafe(siteId: string, options?: { takeoverMode
                 }
             }
 
+            // FAIL-SAFE CHECK: Query 'sites' collection directly for active sites with this domain
+            // This handles cases where domainClaims might be out of sync or missing.
+            // Note: We use getDocs inside transaction scope, but to be truly transactional we must "read" the results via transaction.
+            const sitesRef = collection(db, COLLECTION_NAME);
+            const q = query(sitesRef, where('domain', '==', effectiveDomain));
+            const potentialConflicts = await getDocs(q);
+
+            for (const conflictDoc of potentialConflicts.docs) {
+                if (conflictDoc.id === siteId) continue; // Skip self
+
+                const conflictRef = doc(db, COLLECTION_NAME, conflictDoc.id);
+                const conflictSnap = await transaction.get(conflictRef); // Lock and verify vertically
+
+                if (conflictSnap.exists()) {
+                    const conflictData = conflictSnap.data() as Site;
+                    if (conflictData.status !== 'archived') {
+                        // FOUND CONFLICT via Fail-Safe
+                        let clientName = "Unknown Client";
+                        try {
+                            const clientRef = doc(db, 'clients', conflictData.clientId);
+                            const clientSnap = await transaction.get(clientRef);
+                            if (clientSnap.exists()) {
+                                clientName = clientSnap.data().fullName || "Unknown Client";
+                            }
+                        } catch (e) {
+                            console.warn("Failed to fetch conflicting client details (fail-safe)", e);
+                        }
+
+                        if (!options?.takeoverMode) {
+                            return {
+                                success: false,
+                                conflict: {
+                                    siteId: conflictDoc.id,
+                                    ownerLabel: conflictData.label || 'Unknown',
+                                    clientName: clientName
+                                }
+                            };
+                        }
+
+                        // Takeover logic for fail-safe conflict
+                        if (options.takeoverMode === 'archive') {
+                            transaction.update(conflictRef, {
+                                status: 'archived',
+                                updatedAt: serverTimestamp()
+                            });
+                        } else if (options.takeoverMode === 'pause') {
+                            transaction.update(conflictRef, {
+                                status: 'paused',
+                                domain: '',
+                                updatedAt: serverTimestamp()
+                            });
+                        }
+                    }
+                }
+            }
+
+
             // Restore us and claim domain
             transaction.update(siteRef, {
                 status: 'draft',
@@ -496,5 +604,21 @@ export async function unarchiveSiteSafe(siteId: string, options?: { takeoverMode
     } catch (error) {
         console.error("Error unarchiving site:", error);
         throw error;
+    }
+}
+
+export async function listSuspendedSites(): Promise<Site[]> {
+    try {
+        const sitesRef = collection(db, COLLECTION_NAME);
+        const q = query(sitesRef, where('serviceStatus', '==', 'suspended'));
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as Site));
+    } catch (error) {
+        console.error("Error fetching suspended sites:", error);
+        return [];
     }
 }

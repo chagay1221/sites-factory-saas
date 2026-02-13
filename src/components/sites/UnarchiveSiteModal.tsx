@@ -31,8 +31,8 @@ export const UnarchiveSiteModal = ({ isOpen, onClose, onConfirm, site, conflicti
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
                     <p className="font-semibold mb-1">Domain is already in use!</p>
                     <p>
-                        The domain <strong>{site.domain}</strong> is successfully claimed by another active site
-                        {conflictingClientName && <span> belonging to <strong>{conflictingClientName}</strong></span>}.
+                        The domain <strong>{site.domain}</strong> is already used by another active site
+                        {conflictingClientName ? <span> belonging to <strong>{conflictingClientName}</strong></span> : '.'}
                         To restore <strong>{site.label || 'this site'}</strong>, you must decide what to do with the other site.
                     </p>
                 </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Site, SiteInput } from '@/schemas/site';
-import { ensureProtocol } from '@/utils/domain';
+import { ensureProtocol, normalizeDomain } from '@/utils/domain';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,7 +15,7 @@ import { z } from 'zod';
 const Schema = z.object({
     type: z.enum(['external', 'managed']),
     label: z.string().optional(),
-    status: z.enum(['draft', 'live', 'paused', 'archived']),
+    status: z.enum(['draft', 'live', 'paused', 'archived', 'suspended']),
     domain: z.string().optional(),
     notes: z.string().optional(),
 
@@ -54,10 +54,16 @@ export const SiteModal = ({ isOpen, onClose, onSubmit, initialData, clientId, pr
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
+                // Determine display status based on serviceStatus and status
+                let displayStatus: any = initialData.status;
+                if (initialData.serviceStatus === 'suspended') {
+                    displayStatus = 'suspended';
+                }
+
                 reset({
                     type: initialData.type,
                     label: initialData.label || '',
-                    status: initialData.status,
+                    status: displayStatus,
                     domain: initialData.domain || '',
                     notes: initialData.notes || '',
                     externalUrl: initialData.externalUrl || '',
@@ -80,18 +86,35 @@ export const SiteModal = ({ isOpen, onClose, onSubmit, initialData, clientId, pr
     }, [isOpen, initialData, reset]);
 
     const handleFormSubmit = async (data: FormData) => {
+        // Logic to separate 'suspended' virtual status from actual status/serviceStatus
+        let finalStatus: any = data.status;
+        let finalServiceStatus = 'active'; // Default to active unless suspended selected
+        let finalSuspensionDate = null;
+
+        if (data.status === 'suspended') {
+            finalStatus = initialData?.status || 'paused'; // Keep valid underlying status or default to paused
+            finalServiceStatus = 'suspended';
+            finalSuspensionDate = new Date();
+        } else {
+            // validating user selected a real status
+            finalServiceStatus = 'active';
+        }
+
         // Construct the final object fitting SiteInput
         const payload: SiteInput = {
             clientId,
             type: data.type,
             label: data.label,
-            status: data.status,
-            domain: data.domain,
+            status: finalStatus,
+            serviceStatus: finalServiceStatus as any, // Cast because SiteInput types might NOT include strict enum for this field if not updated
+            suspensionDate: finalSuspensionDate,
+
+            domain: normalizeDomain(data.domain),
             notes: data.notes,
             // Conditional fields
-            ...(data.type === 'external' ? { externalUrl: ensureProtocol(data.externalUrl) } : {}),
+            ...(data.type === 'external' && data.externalUrl?.trim() ? { externalUrl: ensureProtocol(data.externalUrl) } : {}),
             ...(data.type === 'managed' && data.templateKey ? { templateKey: data.templateKey } : {}),
-            ...(data.type === 'managed' ? { previewUrl: ensureProtocol(data.previewUrl) } : {}),
+            ...(data.type === 'managed' && data.previewUrl?.trim() ? { previewUrl: ensureProtocol(data.previewUrl) } : {}),
             // Optional fields
             ...(projectId ? { projectId } : {}),
             ...(initialData?.config ? { config: initialData.config } : {})
@@ -141,6 +164,8 @@ export const SiteModal = ({ isOpen, onClose, onSubmit, initialData, clientId, pr
                             <option value="live">Live</option>
                             <option value="paused">Paused</option>
                             <option value="archived">Archived</option>
+                            <hr />
+                            <option value="suspended" className="text-red-600">⚠ Suspended</option>
                         </select>
                     </div>
                 </div>

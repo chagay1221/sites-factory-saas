@@ -26,6 +26,12 @@ export const SiteSchema = z.object({
         location: z.string().optional(),
     }).optional(),
     notes: z.string().optional(),
+
+    // Retainer / Suspension
+    serviceStatus: z.enum(['active', 'grace', 'suspended']).default('active'),
+    lastPaymentDate: z.any().optional(),
+    suspensionDate: z.any().optional(),
+
     createdAt: z.any().optional(),
     updatedAt: z.any().optional(),
 });

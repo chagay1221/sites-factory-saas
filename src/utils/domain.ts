@@ -13,11 +13,13 @@ export function normalizeDomain(input: string | undefined | null): string | unde
 
     let domain = input.trim().toLowerCase();
 
-    // Remove protocol
-    domain = domain.replace(/^https?:\/\//, '');
+    // Remove protocol (recursive to handle pasted duplicates like https://https://)
+    while (domain.startsWith('http://') || domain.startsWith('https://')) {
+        domain = domain.replace(/^https?:\/\//, '');
+    }
 
     // Remove trailing slash
-    if (domain.endsWith('/')) {
+    while (domain.endsWith('/')) {
         domain = domain.slice(0, -1);
     }
 
